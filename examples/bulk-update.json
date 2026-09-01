@@ -1,0 +1,14 @@
+[
+  {
+    "id": 1,
+    "data": {
+      "active": false
+    }
+  },
+  {
+    "id": 2,
+    "data": {
+      "notes": "Migrated from old system"
+    }
+  }
+]
