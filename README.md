@@ -5,10 +5,9 @@ Standalone Node/TypeScript CLI for bulk license creation and bulk updates agains
 ## Features
 
 - `bulk-create`
-- `bulk-update`
+- `bulk-update` (interactive per-license confirmation)
 - `single-update`
 - JSON input files
-- configurable concurrency
 - dry-run mode
 - optional JSON report output
 - no dependency on the LicenseGate frontend/backend runtime
@@ -28,28 +27,48 @@ From this folder:
 
 Pass values as flags or environment variables:
 
-- `--base-url` or `LICENSEGATE_BASE_URL`
 - `--api-key` or `LICENSEGATE_API_KEY`
-
-The base URL should be the backend origin that exposes `/admin/licenses`.
+- `--base-url` or `LICENSEGATE_BASE_URL` (optional, defaults to `https://api.licensegate.io`)
 
 ## Usage
 
 ### Dry run
 
-- `npx ts-node src/cli.ts bulk-create --base-url https://your-licensegate-backend.example.com --input ./examples/bulk-create.json --dry-run`
+- Bulk create dry run:
+  - `npx ts-node src/cli.ts bulk-create --api-key YOUR_API_KEY --input ./examples/template.bulk-create.json --dry-run`
+- Bulk update dry run (resolves real targets and returns `targetCount`):
+  - `npx ts-node src/cli.ts bulk-update --api-key YOUR_API_KEY --input ./examples/template.bulk-update.json --dry-run`
+- Bulk update from key files dry run (returns `plannedCount`):
+  - `npx ts-node src/cli.ts bulk-update-key-files --api-key YOUR_API_KEY --input ./examples/template.bulk-update.json --key-files-dir ./licenseKeyFiles --dry-run`
 
 ### Bulk create
 
-- `npx ts-node src/cli.ts bulk-create --base-url https://your-licensegate-backend.example.com --api-key YOUR_API_KEY --input ./examples/bulk-create.json --concurrency 5 --report ./reports/create-report.json`
+- `npx ts-node src/cli.ts bulk-create --api-key YOUR_API_KEY --input ./examples/template.bulk-create.json --concurrency 5 --report ./reports/create-report.json`
 
 ### Bulk update
 
-- `npx ts-node src/cli.ts bulk-update --base-url https://your-licensegate-backend.example.com --api-key YOUR_API_KEY --input ./examples/bulk-update.json --concurrency 5 --report ./reports/update-report.json`
+- `npx ts-node src/cli.ts bulk-update --api-key YOUR_API_KEY --input ./examples/template.bulk-update.json --report ./reports/update-report.json`
+
+`bulk-update` is interactive:
+- `y` / `yes`: update this license
+- `n` / `no`: skip this license
+- `q` / `quit`: stop processing more licenses
+- `f` / `fast-forward`: update all remaining licenses without further prompts
+- after choosing update, you can optionally set a custom expiration extension (days from now) for that license
+
+### Bulk update from license key files
+
+- `npx ts-node src/cli.ts bulk-update-key-files --api-key YOUR_API_KEY --input ./examples/template.bulk-update.json --key-files-dir ./licenseKeyFiles --report ./reports/key-files-update-report.json`
+
+Rules for `bulk-update-key-files`:
+- loads `License Keys.csv` and `Orders_*.csv` from `--key-files-dir`
+- reads scopes from the input JSON (`scope` values)
+- targets only assigned keys in those scopes with order assignment date in last 8 days
+- sets expiration date to assignment date + 8 days
 
 ### Single update for testing
 
-- `npx ts-node src/cli.ts single-update --base-url https://your-licensegate-backend.example.com --api-key YOUR_API_KEY --input ./examples/single-update.json --report ./reports/single-update-report.json`
+- `npx ts-node src/cli.ts single-update --api-key YOUR_API_KEY --input ./examples/template.single-update.json --report ./reports/single-update-report.json`
 
 ## Input format
 
@@ -92,8 +111,7 @@ Example:
   {
     "scope": "YOURSCOPE",
     "filter": {
-      "expiredWithinDays": 7,
-      "activatedAtLeastOnce": false
+      "expiredWithinDays": 7
     },
     "data": {
       "expirationDate": {

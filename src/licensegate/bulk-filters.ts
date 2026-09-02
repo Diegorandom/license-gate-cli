@@ -7,8 +7,18 @@ import {
 } from './types'
 
 export function normalizeBulkUpdateInput(input: LicenseGateBulkUpdateInput): LicenseGateLicenseUpdateInput {
+  const {
+    ipLimit: _ipLimit,
+    licenseScope: _licenseScope,
+    validationPoints: _validationPoints,
+    validationLimit: _validationLimit,
+    replenishAmount: _replenishAmount,
+    replenishInterval: _replenishInterval,
+    ...rest
+  } = input
+
   return {
-    ...input,
+    ...rest,
     expirationDate: resolveExpirationDate(input.expirationDate),
   }
 }

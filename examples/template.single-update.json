@@ -2,8 +2,7 @@
   {
     "scope": "YOUR_SCOPE",
     "filter": {
-      "expiringWithinDays": 7,
-      "activatedAtLeastOnce": false
+      "expiringWithinDays": 7
     },
     "data": {
       "expirationDate": {

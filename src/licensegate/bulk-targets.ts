@@ -1,17 +1,14 @@
 import {
-  type LicenseGateBulkUpdateFilter,
   type LicenseGateBulkUpdateItem,
   type LicenseGateLicense,
   type LicenseGateLicenseUpdateInput,
-  type LicenseGateLogsListInput,
   type LicenseGateSingleUpdateItem,
 } from './types'
 import { matchesBulkUpdateFilter, normalizeBulkUpdateInput } from './bulk-filters'
 
 export async function resolveBulkTargets(
   inputs: Array<LicenseGateBulkUpdateItem | LicenseGateSingleUpdateItem>,
-  listLicenses: () => Promise<LicenseGateLicense[]>,
-  listLogs: (input: LicenseGateLogsListInput) => Promise<Array<{ licenseId: number }>>
+  listLicenses: () => Promise<LicenseGateLicense[]>
 ) {
   const targetedScopes = Array.from(
     new Set(inputs.map((input) => input.scope).filter((scope): scope is string => Boolean(scope)))
@@ -42,10 +39,9 @@ export async function resolveBulkTargets(
       continue
     }
 
-    const scopedLicenses = await filterScopedLicenses(
+    const scopedLicenses = filterScopedLicenses(
       licensesByScope.get(input.scope ?? '') ?? [],
-      input.filter,
-      listLogs
+      input.filter
     )
 
     for (const license of scopedLicenses) {
@@ -56,42 +52,9 @@ export async function resolveBulkTargets(
   return expandedInputs
 }
 
-async function filterScopedLicenses(
+function filterScopedLicenses(
   licenses: LicenseGateLicense[],
-  filter: LicenseGateBulkUpdateFilter | undefined,
-  listLogs: (input: LicenseGateLogsListInput) => Promise<Array<{ licenseId: number }>>
+  filter: LicenseGateBulkUpdateItem['filter']
 ) {
-  const candidateLicenses = licenses.filter((license) => matchesBulkUpdateFilter(license, filter))
-
-  if (filter?.activatedAtLeastOnce === undefined) {
-    return candidateLicenses
-  }
-
-  const checks = await Promise.all(
-    candidateLicenses.map(async (license) => ({
-      license,
-      activated: await licenseHasSuccessfulValidation(license.id, listLogs),
-    }))
-  )
-
-  return checks
-    .filter((check) =>
-      filter.activatedAtLeastOnce ? check.activated : !check.activated
-    )
-    .map((check) => check.license)
-}
-
-async function licenseHasSuccessfulValidation(
-  licenseId: number,
-  listLogs: (input: LicenseGateLogsListInput) => Promise<Array<{ licenseId: number }>>
-) {
-  const logs = await listLogs({
-    filter: {
-      licenseId,
-      result: ['VALID'],
-    },
-    size: 1,
-  })
-
-  return logs.length > 0
+  return licenses.filter((license) => matchesBulkUpdateFilter(license, filter))
 }

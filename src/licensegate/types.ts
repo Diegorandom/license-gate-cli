@@ -55,7 +55,6 @@ export interface LicenseGateBulkUpdateFilter {
   createdWithinDays?: number
   expiringWithinDays?: number
   expiredWithinDays?: number
-  activatedAtLeastOnce?: boolean
 }
 
 export interface LicenseGateBulkUpdateItem {
@@ -70,30 +69,6 @@ export interface LicenseGateSingleUpdateItem {
   scope?: string
   filter?: LicenseGateBulkUpdateFilter
   data: LicenseGateBulkUpdateInput
-}
-
-export interface LicenseGateLogEntry {
-  id: number
-  userId: number
-  licenseId: number
-  ip: string
-  result: string
-  metadata: string
-  timestamp: string
-  license: {
-    name: string
-    licenseKey: string
-  }
-}
-
-export interface LicenseGateLogsListInput {
-  filter: {
-    licenseId?: number
-    result?: string[]
-  }
-  size: number
-  after?: number
-  before?: number
 }
 
 export interface LicenseGateBulkOptions {

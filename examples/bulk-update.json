@@ -1,10 +1,10 @@
 [
-  {
-    "scope": "RaiderProFreeTrial",
-    "data": {
-      "expirationDate": {
-        "extendByDays": 14
-      }
+    {
+        "scope": "RPro2-FreeTrial",
+        "data": {
+            "expirationDate": {
+                "extendByDays": 8
+            }
+        }
     }
-  }
 ]
