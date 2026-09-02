@@ -63,8 +63,29 @@ Pass values as flags or environment variables:
 Rules for `bulk-update-key-files`:
 - loads `License Keys.csv` and `Orders_*.csv` from `--key-files-dir`
 - reads scopes from the input JSON (`scope` values)
-- targets only assigned keys in those scopes with order assignment date in last 8 days
+- targets assigned keys in those scopes with order assignment date in last 8 days
 - sets expiration date to assignment date + 8 days
+- targets available/unassigned keys in those scopes and sets expiration date to today + 8 days
+
+Expected CSV headers:
+
+- `License Keys.csv` (required columns):
+  - `key`
+  - `status`
+  - `order_name`
+
+  Example header:
+  - `key,tag,status,order_name,created_at`
+
+- `Orders_*.csv` (required columns):
+  - `order_name`
+  - `date`
+
+  Optional but recommended:
+  - `order_number` (improves matching for values like `Order #1697`)
+
+  Example header:
+  - `order_number,order_name,customer,email,products,date`
 
 ### Single update for testing
 
