@@ -6,19 +6,9 @@ import {
   type LicenseGateBulkUpdateItem,
   type LicenseGateLicense,
   type LicenseGateLicenseCreateInput,
-} from './client'
-
-type Command = 'bulk-create' | 'bulk-update'
-
-interface CliOptions {
-  command: Command
-  baseUrl: string
-  apiKey: string
-  input: string
-  concurrency: number
-  dryRun: boolean
-  report?: string
-}
+  type LicenseGateSingleUpdateItem,
+} from './licensegate'
+import type { CliOptions, Command } from './cli/types'
 
 async function main() {
   const options = parseArgs(process.argv.slice(2))
@@ -30,16 +20,20 @@ async function main() {
   }
 
   if (options.dryRun) {
-    const summary = {
-      command: options.command,
-      baseUrl: options.baseUrl,
-      input: options.input,
-      items: parsedInput.length,
-      concurrency: options.concurrency,
-      dryRun: true,
-    }
-
-    console.log(JSON.stringify(summary, null, 2))
+    console.log(
+      JSON.stringify(
+        {
+          command: options.command,
+          baseUrl: options.baseUrl,
+          input: options.input,
+          items: parsedInput.length,
+          concurrency: options.concurrency,
+          dryRun: true,
+        },
+        null,
+        2
+      )
+    )
     return
   }
 
@@ -48,40 +42,49 @@ async function main() {
     apiKey: options.apiKey,
   })
 
-  const result =
-    options.command === 'bulk-create'
-      ? await client.bulkCreate(parsedInput as LicenseGateLicenseCreateInput[], {
-          concurrency: options.concurrency,
-        })
-      : await client.bulkUpdate(parsedInput as LicenseGateBulkUpdateItem[], {
-          concurrency: options.concurrency,
-        })
+  if (options.command === 'bulk-create') {
+    const result = await client.bulkCreate(parsedInput as LicenseGateLicenseCreateInput[], {
+      concurrency: options.concurrency,
+    })
+    await maybeWriteReport(options.report, result)
+    printBulkResult(options.command, result, options.report)
+    if (result.failureCount > 0) process.exitCode = 1
+    return
+  }
 
+  if (options.command === 'bulk-update') {
+    const result = await client.bulkUpdate(parsedInput as LicenseGateBulkUpdateItem[], {
+      concurrency: options.concurrency,
+    })
+    await maybeWriteReport(options.report, result)
+    printBulkResult(options.command, result, options.report)
+    if (result.failureCount > 0) process.exitCode = 1
+    return
+  }
+
+  const [singleInput] = parsedInput as LicenseGateSingleUpdateItem[]
+  if (!singleInput) {
+    throw new Error('Input file must contain at least one item for single-update')
+  }
+
+  const result = await client.updateSingleLicense(singleInput)
   await maybeWriteReport(options.report, result)
-
   console.log(
     JSON.stringify(
       {
         command: options.command,
-        total: result.total,
-        successCount: result.successCount,
-        failureCount: result.failureCount,
-        report: options.report ?? null,
+        result,
       },
       null,
       2
     )
   )
-
-  if (result.failureCount > 0) {
-    process.exitCode = 1
-  }
 }
 
 function parseArgs(args: string[]): CliOptions {
   const [command, ...rest] = args
 
-  if (command !== 'bulk-create' && command !== 'bulk-update') {
+  if (!isCommand(command)) {
     throw new Error(helpText())
   }
 
@@ -127,9 +130,16 @@ function parseArgs(args: string[]): CliOptions {
   }
 }
 
+function isCommand(value: string): value is Command {
+  return value === 'bulk-create' || value === 'bulk-update' || value === 'single-update'
+}
+
 async function maybeWriteReport(
   reportPath: string | undefined,
-  result: BulkResult<LicenseGateLicenseCreateInput | LicenseGateBulkUpdateItem, LicenseGateLicense>
+  result:
+    | BulkResult<LicenseGateLicenseCreateInput, LicenseGateLicense>
+    | BulkResult<LicenseGateBulkUpdateItem, LicenseGateLicense>
+    | LicenseGateLicense
 ) {
   if (!reportPath) return
 
@@ -138,11 +148,32 @@ async function maybeWriteReport(
   await writeFile(resolvedPath, JSON.stringify(result, null, 2), 'utf8')
 }
 
+function printBulkResult(
+  command: 'bulk-create' | 'bulk-update',
+  result: BulkResult<LicenseGateLicenseCreateInput, LicenseGateLicense> | BulkResult<LicenseGateBulkUpdateItem, LicenseGateLicense>,
+  reportPath: string | undefined
+) {
+  console.log(
+    JSON.stringify(
+      {
+        command,
+        total: result.total,
+        successCount: result.successCount,
+        failureCount: result.failureCount,
+        report: reportPath ?? null,
+      },
+      null,
+      2
+    )
+  )
+}
+
 function helpText() {
   return [
     'Usage:',
     '  licensegate-bulk bulk-create --base-url <url> --api-key <key> --input <file> [--concurrency <n>] [--dry-run] [--report <file>]',
     '  licensegate-bulk bulk-update --base-url <url> --api-key <key> --input <file> [--concurrency <n>] [--dry-run] [--report <file>]',
+    '  licensegate-bulk single-update --base-url <url> --api-key <key> --input <file> [--dry-run] [--report <file>]',
   ].join('\n')
 }
 

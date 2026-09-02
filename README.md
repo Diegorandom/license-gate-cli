@@ -6,6 +6,7 @@ Standalone Node/TypeScript CLI for bulk license creation and bulk updates agains
 
 - `bulk-create`
 - `bulk-update`
+- `single-update`
 - JSON input files
 - configurable concurrency
 - dry-run mode
@@ -46,6 +47,10 @@ The base URL should be the backend origin that exposes `/admin/licenses`.
 
 - `npx ts-node src/cli.ts bulk-update --base-url https://your-licensegate-backend.example.com --api-key YOUR_API_KEY --input ./examples/bulk-update.json --concurrency 5 --report ./reports/update-report.json`
 
+### Single update for testing
+
+- `npx ts-node src/cli.ts single-update --base-url https://your-licensegate-backend.example.com --api-key YOUR_API_KEY --input ./examples/single-update.json --report ./reports/single-update-report.json`
+
 ## Input format
 
 ### bulk-create
@@ -62,13 +67,38 @@ JSON array of license payloads:
 
 ### bulk-update
 
-JSON array of update operations:
+Use `scope` to update all licenses that share a `licenseScope`. Set `data.expirationDate` to `{ "extendByDays": <number> }` to choose how many days to add from when the script runs.
+
+Example: renew all licenses in `YOURSCOPE` by 14 days:
 
 `[
   {
-    "id": 123,
+    "scope": "YOURSCOPE",
     "data": {
-      "active": false
+      "expirationDate": {
+        "extendByDays": 14
+      }
+    }
+  }
+]`
+
+### single-update
+
+Use this to update one matching license for testing. It accepts the same scope/filter structure, but the command stops after resolving one target.
+
+Example:
+
+`[
+  {
+    "scope": "YOURSCOPE",
+    "filter": {
+      "expiredWithinDays": 7,
+      "activatedAtLeastOnce": false
+    },
+    "data": {
+      "expirationDate": {
+        "extendByDays": 7
+      }
     }
   }
 ]`

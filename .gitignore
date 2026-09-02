@@ -3,3 +3,5 @@ dist/
 .env
 reports/
 .vs/
+examples/*
+!examples/template.*.json

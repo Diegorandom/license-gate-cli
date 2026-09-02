@@ -1,0 +1,14 @@
+[
+  {
+    "scope": "YOUR_SCOPE",
+    "filter": {
+      "expiringWithinDays": 7,
+      "activatedAtLeastOnce": false
+    },
+    "data": {
+      "expirationDate": {
+        "extendByDays": 7
+      }
+    }
+  }
+]

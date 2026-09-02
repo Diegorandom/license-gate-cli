@@ -1,6 +1,9 @@
 [
   {
-    "scope": "RaiderProFreeTrial",
+    "scope": "YOUR_SCOPE",
+    "filter": {
+      "expiredWithinDays": 14
+    },
     "data": {
       "expirationDate": {
         "extendByDays": 14
