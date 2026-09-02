@@ -1,6 +1,6 @@
 # licensegate-bulk-cli
 
-Standalone Node/TypeScript CLI for bulk license creation and bulk updates against an existing LicenseGate backend.
+Standalone Node/TypeScript CLI for bulk license creation and bulk updates against an existing [LicenseGate](https://licensegate.io/) backend.
 
 ## Features
 
