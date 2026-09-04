@@ -1,14 +1,17 @@
-[
-  {
-    "name": "Customer A",
-    "notes": "",
-    "active": true,
-    "licenseScope": "pro"
-  },
-  {
-    "name": "Customer B",
-    "notes": "Imported in bulk",
-    "active": true,
-    "ipLimit": 2
-  }
-]
+{
+    "count": 3,
+    "data": {
+        "name": "RaiderProFreeTrial",
+        "notes": "",
+        "active": true,
+        "ipLimit": 1,
+        "validationPoints": 3,
+        "validationLimit": 3,
+        "replenishAmount": 1,
+        "replenishInterval": "TEN_SECONDS",
+        "expirationDate": {
+            "extendByDays": 8
+        },
+        "licenseScope": "RaiderProFreeTrial"
+    }
+}

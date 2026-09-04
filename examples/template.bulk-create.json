@@ -1,8 +1,17 @@
-[
-  {
-    "name": "Customer A",
+{
+  "count": 50,
+  "data": {
+    "name": "RaiderPro Free Trial",
     "notes": "",
     "active": true,
-    "licenseScope": "YOUR_SCOPE"
+    "ipLimit": 1,
+    "validationPoints": 3,
+    "validationLimit": 3,
+    "replenishAmount": 1,
+    "replenishInterval": "TEN_SECONDS",
+    "expirationDate": {
+      "extendByDays": 8
+    },
+    "licenseScope": "RaiderProFreeTrial"
   }
-]
+}

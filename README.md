@@ -95,7 +95,34 @@ Expected CSV headers:
 
 ### bulk-create
 
-JSON array of license payloads:
+You can provide either:
+
+1) JSON array of payloads (legacy format), or
+2) single template format with `count` + `data` (recommended)
+
+Single template format:
+
+`{
+  "count": 50,
+  "data": {
+    "name": "theNameOfYourLicense",
+    "notes": "",
+    "active": true,
+    "ipLimit": 1,
+    "validationPoints": 3,
+    "validationLimit": 3,
+    "replenishAmount": 1,
+    "replenishInterval": "TEN_SECONDS",
+    "expirationDate": {
+      "extendByDays": 8
+    },
+    "licenseScope": "YourScope"
+  }
+}`
+
+This creates 50 licenses with the same settings.
+
+Legacy array format still works:
 
 `[
   {
