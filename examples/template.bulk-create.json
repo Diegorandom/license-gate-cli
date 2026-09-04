@@ -1,7 +1,7 @@
 {
   "count": 50,
   "data": {
-    "name": "RaiderPro Free Trial",
+    "name": "Whatever you want it to be named",
     "notes": "",
     "active": true,
     "ipLimit": 1,
@@ -12,6 +12,6 @@
     "expirationDate": {
       "extendByDays": 8
     },
-    "licenseScope": "RaiderProFreeTrial"
+    "licenseScope": "yourScope"
   }
 }
