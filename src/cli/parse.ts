@@ -29,7 +29,10 @@ export function parseArgs(args: string[]): CliOptions {
     apiKey,
     input,
     keyFilesDir: map.get('--key-files-dir') ?? './licenseKeyFiles',
-    concurrency: Number(map.get('--concurrency') ?? '5'),
+    concurrency: (() => { 
+      const n = Number(map.get('--concurrency') ?? '5'); 
+      return Number.isFinite(n) ? Math.max(1, Math.floor(n)) : 5; 
+    })(),
     dryRun: flags.has('--dry-run'),
     report: map.get('--report'),
   }

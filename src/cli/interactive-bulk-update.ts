@@ -1,8 +1,18 @@
 import { createInterface } from 'readline/promises'
-import { LicenseGateAdminClient, LicenseGateAdminClientError, resolveBulkTargets, type LicenseGateBulkUpdateItem, type LicenseGateLicenseUpdateInput } from '../licensegate'
+import { 
+  LicenseGateAdminClient, 
+  LicenseGateAdminClientError, 
+  resolveBulkTargets, 
+  type LicenseGateBulkUpdateItem, 
+  type 
+  LicenseGateLicenseUpdateInput 
+} from '../licensegate'
 import type { InteractiveBulkUpdateResult } from './interactive-types'
 
-export async function runInteractiveBulkUpdate(client: LicenseGateAdminClient, inputs: LicenseGateBulkUpdateItem[]): Promise<InteractiveBulkUpdateResult> {
+export async function runInteractiveBulkUpdate(
+  client: LicenseGateAdminClient, 
+  inputs: LicenseGateBulkUpdateItem[])
+  : Promise<InteractiveBulkUpdateResult> {
   if (!process.stdin.isTTY || !process.stdout.isTTY) throw new Error('bulk-update interactive mode requires a TTY terminal')
 
   const licenses = await client.listLicenses()
@@ -29,8 +39,15 @@ export async function runInteractiveBulkUpdate(client: LicenseGateAdminClient, i
       }
 
       attempted++
-      try { await client.updateLicense(target.id, updateData); successCount++ }
-      catch (error) { failureCount++; const message = formatUpdateError(error); failures.push({ id: target.id, message }); console.error(`Failed to update license ${target.id}: ${message}`) }
+      try { 
+        await client.updateLicense(target.id,updateData,licenses.find((license) => license.id === target.id)); 
+        successCount++ 
+      }catch (error) { 
+        failureCount++; 
+        const message = formatUpdateError(error); 
+        failures.push({ id: target.id, message }); 
+        console.error(`Failed to update license ${target.id}: ${message}`) 
+      }
     }
   } finally { rl.close() }
 
