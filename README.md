@@ -95,15 +95,42 @@ Expected CSV headers:
 
 ### bulk-create
 
-JSON array of license payloads:
+You can provide either:
 
-`[
-  {
-    "name": "Customer A",
-    "notes": "",
-    "active": true
-  }
-]`
+1) JSON array of payloads (legacy format), or
+2) single template format with `count` + `data` (recommended)
+
+Single template format:
+
+    {
+      "count": 50,
+      "data": {
+        "name": "theNameOfYourLicense",
+        "notes": "",
+        "active": true,
+        "ipLimit": 1,
+        "validationPoints": 3,
+        "validationLimit": 3,
+        "replenishAmount": 1,
+        "replenishInterval": "TEN_SECONDS",
+        "expirationDate": {
+          "extendByDays": 8
+        },
+        "licenseScope": "YourScope"
+      }
+    }
+
+This creates 50 licenses with the same settings.
+
+Legacy array format still works:
+
+    [
+      {
+        "name": "Customer A",
+        "notes": "",
+        "active": true
+      }
+    ]
 
 ### bulk-update
 
@@ -111,16 +138,16 @@ Use `scope` to update all licenses that share a `licenseScope`. Set `data.expira
 
 Example: renew all licenses in `YOURSCOPE` by 14 days:
 
-`[
-  {
-    "scope": "YOURSCOPE",
-    "data": {
-      "expirationDate": {
-        "extendByDays": 14
+    [
+      {
+        "scope": "YOURSCOPE",
+        "data": {
+          "expirationDate": {
+            "extendByDays": 14
+          }
+        }
       }
-    }
-  }
-]`
+    ]
 
 ### single-update
 
@@ -128,19 +155,19 @@ Use this to update one matching license for testing. It accepts the same scope/f
 
 Example:
 
-`[
-  {
-    "scope": "YOURSCOPE",
-    "filter": {
-      "expiredWithinDays": 7
-    },
-    "data": {
-      "expirationDate": {
-        "extendByDays": 7
+    [
+      {
+        "scope": "YOURSCOPE",
+        "filter": {
+          "expiredWithinDays": 7
+        },
+        "data": {
+          "expirationDate": {
+            "extendByDays": 7
+          }
+        }
       }
-    }
-  }
-]`
+    ]
 
 ## Exit code
 
