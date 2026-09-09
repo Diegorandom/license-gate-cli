@@ -12,7 +12,9 @@ export async function maybeWriteReport(reportPath: string | undefined, result: u
 }
 
 export function buildBulkCreateReport(result: BulkResult<LicenseGateLicenseCreateInput, LicenseGateLicense>) {
-  const createdLicenseKeys = result.results.filter((item) => item.success).map((item) => item.data.licenseKey)
+  const createdLicenseKeys = result.results
+     .filter((item): item is Extract<(typeof result.results)[number], { success: true }> => item.success)
+     .map((item) => item.data.licenseKey)
   return { ...result, createdLicenseKeys }
 }
 
