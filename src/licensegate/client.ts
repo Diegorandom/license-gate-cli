@@ -56,7 +56,10 @@ export class LicenseGateAdminClient {
     return listAllLicenses(this.fetchImplementation, this.baseUrl, this.apiKey)
   }
 
-  async bulkCreate(inputs: LicenseGateLicenseCreateInput[], options: LicenseGateBulkOptions = {}): Promise<BulkResult<LicenseGateLicenseCreateInput, LicenseGateLicense>> {
+  async bulkCreate(
+    inputs: LicenseGateLicenseCreateInput[], 
+    options: LicenseGateBulkOptions = {})
+    : Promise<BulkResult<LicenseGateLicenseCreateInput, LicenseGateLicense>> {
     return runBulk(inputs, (input) => this.createLicense(input), options, this.toClientError)
   }
 
