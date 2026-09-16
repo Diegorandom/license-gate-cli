@@ -1,3 +1,5 @@
+<img width="3024" height="1890" alt="license-gate-cli diagram (1)" src="https://github.com/user-attachments/assets/5b3b2328-f7c6-43ac-9e06-08315b34054a" />
+
 # licensegate-bulk-cli
 
 Standalone Node/TypeScript CLI for bulk license creation and bulk updates against an existing [LicenseGate](https://licensegate.io/) backend.
