@@ -6,3 +6,4 @@ reports/
 examples/*
 !examples/template.*.json
 licenseKeyFiles/*
+.DS_Store
