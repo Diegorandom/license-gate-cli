@@ -14,6 +14,19 @@ Standalone Node/TypeScript CLI for bulk license creation and bulk updates agains
 - optional JSON report output
 - no dependency on the LicenseGate frontend/backend runtime
 
+## Agent skill
+
+This repository ships an [Agent Skills](https://agentskills.io/specification) definition
+for operating the CLI safely:
+
+- `.agents/skills/licensegate-operator/SKILL.md`
+
+It documents the safety protocol (dry-run first, explicit confirmation before live
+mutations), the command/flag reference, input formats, the `bulk-update-key-files` CSV
+rules, and end-to-end worked examples. Agent harnesses that support the Agent Skills
+spec (Pi and others) discover it automatically when working in this repository; it can
+also be read directly.
+
 ## Requirements
 
 - Node.js 18+
