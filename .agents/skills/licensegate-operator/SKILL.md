@@ -2,7 +2,7 @@
 name: licensegate-operator
 description: >-
   Operate the LicenseGate bulk CLI (license-gate-cli). Use when creating or updating
-  customer licenses in the live LicenseGate store via bulk-create, single-update, or
+  licenses in a live LicenseGate store via bulk-create, single-update, or
   bulk-update-key-files, when renewing/extending expirations, when setting 8-day
   free-trial expirations, or when reconciling licenses from the licenseKeyFiles CSV
   exports (License Keys.csv + Orders_*.csv). Always dry-runs first and never mutates
@@ -11,25 +11,26 @@ description: >-
 
 # LicenseGate operator
 
-You operate `license-gate-cli` for Diego. This tool **mutates real customer
-licenses**, so follow the safety protocol exactly.
+You operate `license-gate-cli` for the user. This tool **mutates real licenses**, so
+follow the safety protocol exactly. Keep secrets out of logs, commits, and command lines.
 
-## Diego's scopes (confirmed 2026-10-13)
+## License scopes & trial rules
 
-- **Free trial:** `RaiderProFreeTrial`, `RPro2-FreeTrial` — expiration = assignment + 8 days.
-  (Note the hyphen in `RPro2-FreeTrial`.)
-- **Paid:** `RaiderPro`, `RPro2`, `VocalFocus` — leave existing expirations alone; only adjust
-  expiration on new updates / custom cases.
+- `licenseScope` values are **project-specific**. Confirm the exact scope names with the
+  operator for each job; do not assume them. Matching is case-insensitive and trimmed.
+- **Free-trial** scopes use an **8-day** expiration measured from the assignment (order)
+  date.
+- **Paid** scopes keep their existing expirations unless the operator explicitly asks for
+  a change.
 - ⚠️ `bulk-update-key-files` only touches assigned keys whose order is **within the last 8
-  days** plus available keys. A full historical backfill (all ~705 trial licenses → order
-  date + 8 days) is **not** what that command does; it needs a code change or an explicit
-  per-license plan, and 685 of those would land in the past (i.e. expire immediately).
+  days** plus available keys. A full historical backfill (every trial license → order date
+  + 8 days) is **not** what that command does; it needs a code change or an explicit
+  per-license plan, and older orders would land in the past (i.e. expire immediately).
 
 ## Where everything is
 
-- **Repo root:** `/Users/diegoortega/Documents/GitHub/license-gate-cli`. Always `cd`
-  into it before running anything. If it is moved, confirm the path with the user.
-- **Default branch:** `feature/agent-operator`.
+- **Repo root:** run every command from the root of this repository (the directory that
+  contains `package.json` and `src/`). `cd` into it first.
 - **Entry:** `src/cli.ts` · binary after build: `dist/cli.js` (bin `licensegate-bulk`).
 - **Run without building:** `npx ts-node src/cli.ts <command> …` from the repo root.
 - **Build:** `npm install` then `npm run build`.
@@ -37,30 +38,31 @@ licenses**, so follow the safety protocol exactly.
   `examples/template.single-update.json`.
 - **Key files dir (default):** `./licenseKeyFiles`, containing:
   - the license-keys export, whose **exact expected name is `License Keys.csv`** (loader
-    constant `LICENSE_KEYS_FILE`); on macOS' case-insensitive FS `License keys.csv` still
+    constant `LICENSE_KEYS_FILE`); on a case-insensitive filesystem `License keys.csv` still
     resolves, so don't rename the export just for casing.
   - the orders export, which must match **`/^Orders_.*\.csv$/i`** — it needs the `Orders_`
     prefix. A file named plain `Orders.csv` fails with `Orders CSV not found in …`.
     Rename/copy to e.g. `Orders_.csv` (keep the original too) instead of editing code.
 
-## Setup & environment (learned 2026-10-13)
+## Setup & environment
 
 - **Install deps before the first `npx ts-node`.** A bare checkout has no `node_modules`;
   `npx` then pulls a mismatched `ts-node` and dies with
   `TypeError: Cannot read properties of undefined (reading 'fileExists')`.
-  Fix: `npm install` once from the repo root (verified: 105 packages, ~1s).
-- **Non-interactive tool shells do not source `~/.zshrc`.** For every run, prefix with:
-  `set -a && source ~/.zshrc && set +a && npx ts-node src/cli.ts …`
+  Fix: `npm install` once from the repo root.
+- **Non-interactive tool shells don't load your shell profile.** If the key is defined in a
+  profile (e.g. `~/.zshrc`, `~/.bashrc`, `~/.zprofile`), source it for the command:
+  `set -a && source <profile> && set +a && npx ts-node src/cli.ts …`
   This loads the key in-process only. Never `echo` it and never pass `--api-key` on the
   command line (it leaks into shell history / the process list). If verification is
-  requested, reveal at most first/last 3 chars of `$LICENSEGATE_API_KEY`.
+  requested, reveal at most first/last 3 characters of `$LICENSEGATE_API_KEY`.
 - **Auth is required even for `--dry-run`.** `bulk-create --dry-run` makes **no** API call
   (it only counts items) but still exits `Missing --api-key or LICENSEGATE_API_KEY` without
   a key. `bulk-update` and `bulk-update-key-files` dry-runs **do** call `listLicenses()`
   (read-only, cheap, allowed).
 - **Production by default:** `https://api.licensegate.io`. Do not pass `--base-url` unless
   the user explicitly wants a non-prod store.
-- **Date/timezone:** order dates like `2026-10-13 00:53` are parsed by `new Date()` as
+- **Date/timezone:** order dates like `2026-01-15 09:30` are parsed by `new Date()` as
   **local** time; expirations are emitted as ISO/UTC. When reasoning about "today", state
   the assumption (machine clock, UTC).
 
@@ -154,9 +156,9 @@ Hard-coded `days = 8`:
   days ago can land **< 24h from now** (i.e. *not* "at least a day"). Surface those ids and
   confirm the user accepts it (they did receive a full 8-day trial).
 - ⚠️ The CSV `tag` column is **ignored by the planner.** Matching keys on the **live
-  `licenseScope`**, case-insensitively, against the scopes in the input JSON. Tags can also
-  disagree with the live scope (real example: tag `rpro2freetrial` vs live
-  `RPro2-FreeTrial` — missing hyphen). Never derive the input scope from the tag.
+  `licenseScope`**, case-insensitively, against the scopes in the input JSON. A tag can also
+  disagree with the live scope (case, spacing, or a missing hyphen). Never derive the input
+  scope from the tag.
 - CSV headers:
   - `License Keys.csv` requires `key`, `status`, `order_name`
     (example: `key,tag,status,order_name,created_at`).
@@ -167,8 +169,8 @@ Hard-coded `days = 8`:
 - `bulk-create` prints `{ command, total, successCount, failureCount, report }` and, with
   `--report`, also writes a sibling key list
   **`<report-basename-without-.json>-keys.txt`** (one key per line, **no trailing newline**
-  — count with `grep -c .`, not `wc -l`). Example: report `…/foo-2026-10-12.json` → keys
-  `…/foo-2026-10-12-keys.txt`. The report JSON also carries `createdLicenseKeys[]`.
+  — count with `grep -c .`, not `wc -l`). Example: report `…/foo-2026-01-01.json` → keys
+  `…/foo-2026-01-01-keys.txt`. The report JSON also carries `createdLicenseKeys[]`.
 - Treat the `-keys.txt` file as a live secret (hand it to the customer; don't commit).
 - `bulk-update` prints `{ total, attempted, successCount, failureCount, skippedCount,
   terminatedEarly, failures, report }`.
@@ -201,65 +203,62 @@ Hard-coded `days = 8`:
 **Test safely:** `single-update` with a tight filter (e.g. `expiringWithinDays: 1`)
 updates exactly one license.
 
-## End-to-end worked examples (verbatim, 2026-10-13)
+## End-to-end worked examples
 
 ### Example A — create N free-trial licenses for a scope
 
-Objective: "I want 50 licenses for `RaiderProFreeTrial`."
+Objective: "create 50 licenses for scope `<FREE_TRIAL_SCOPE>`."
 
-1. Write `reports/create-raidapro-freetrial-50.input.json`:
+1. Write `reports/create-<scope>-50.input.json`:
    ```json
-   { "count": 50, "data": { "name": "RaiderPro Free Trial", "notes": "", "active": true,
+   { "count": 50, "data": { "name": "<License Name>", "notes": "", "active": true,
      "ipLimit": 1, "validationPoints": 3, "validationLimit": 3, "replenishAmount": 1,
      "replenishInterval": "TEN_SECONDS", "expirationDate": { "extendByDays": 8 },
-     "licenseScope": "RaiderProFreeTrial" } }
+     "licenseScope": "<FREE_TRIAL_SCOPE>" } }
    ```
 2. Dry-run (no API call, but needs auth):
    ```bash
-   set -a && source ~/.zshrc && set +a && \
-   npx ts-node src/cli.ts bulk-create --input ./reports/create-raidapro-freetrial-50.input.json --dry-run
+   npx ts-node src/cli.ts bulk-create --input ./reports/create-<scope>-50.input.json --dry-run
    ```
    → `{ command:"bulk-create", baseUrl:"https://api.licensegate.io", items:50,
    concurrency:5, dryRun:true }`
 3. Show the exact per-license payload + count, wait for an explicit **yes**, then live:
    ```bash
-   npx ts-node src/cli.ts bulk-create --input ./reports/create-raidapro-freetrial-50.input.json \
-     --concurrency 5 --report ./reports/bulk-create-raidapro-freetrial-2026-10-12.json
+   npx ts-node src/cli.ts bulk-create --input ./reports/create-<scope>-50.input.json \
+     --concurrency 5 --report ./reports/bulk-create-<scope>-<date>.json
    ```
    → `{ total:50, successCount:50, failureCount:0 }`, exit 0.
-4. Read back: 50 successes; sample `expirationDate ≈ now+8d`, scope `RaiderProFreeTrial`;
-   keys file **50 keys, 50 unique** (`grep -c .`).
+4. Read back: all-success count; sample `expirationDate ≈ now+8d`; keys file has the
+   expected number of unique keys (`grep -c .`).
 
 ### Example B — standard 8-day free-trial reconciliation (key-files flow)
 
-Objective: "update the currently assigned keys so each trial lasts the full 8 days" for
-scopes `RaiderProFreeTrial` + `RPro2-FreeTrial`.
+Objective: "update the currently assigned keys so each trial lasts the full 8 days."
 
 1. Ensure `licenseKeyFiles/` has `License Keys.csv` + an `Orders_*.csv`.
 2. Input `reports/free-trials.input.json`:
    ```json
-   [ { "scope": "RaiderProFreeTrial", "data": {} },
-     { "scope": "RPro2-FreeTrial", "data": {} } ]
+   [ { "scope": "<FREE_TRIAL_SCOPE_A>", "data": {} },
+     { "scope": "<FREE_TRIAL_SCOPE_B>", "data": {} } ]
    ```
 3. Dry-run (calls `listLicenses()`, read-only):
    ```bash
-   set -a && source ~/.zshrc && set +a && \
    npx ts-node src/cli.ts bulk-update-key-files --input ./reports/free-trials.input.json \
      --key-files-dir ./licenseKeyFiles --dry-run > reports/key-files-dryrun-<date>.json
    ```
-   → `plannedCount:70` = 26 `ASSIGNED_WITHIN_WINDOW` + **44 `AVAILABLE`**. Report the split,
-   flag the available side effect and any <24h boundary keys, wait for explicit yes.
+   → `plannedCount:<N>` = `<a>` `ASSIGNED_WITHIN_WINDOW` + `<b>` **`AVAILABLE`**. Report the
+   split, flag the available side effect and any <24h boundary keys, wait for explicit yes.
 4. Live:
    ```bash
    npx ts-node src/cli.ts bulk-update-key-files --input ./reports/free-trials.input.json \
      --key-files-dir ./licenseKeyFiles --report ./reports/bulk-update-key-files-<date>.json
    ```
-   → `{ plannedCount:70, updatedCount:70, failedCount:0 }`, exit 0.
-5. Read back: 70 unique ids, expiration range, `failures:[]`.
+   → `{ plannedCount:<N>, updatedCount:<N>, failedCount:0 }`, exit 0.
+5. Read back: unique ids, expiration range, `failures:[]`.
 
-**Pitfalls hit doing these two, now encoded above:** missing `node_modules`; non-interactive
-shell not sourcing the key; `Orders.csv` vs `Orders_*.csv`; available-branch side effect;
-tag-vs-live-scope hyphen mismatch.
+**Pitfalls to expect:** missing `node_modules`; a non-interactive shell not loading the
+profile that holds the key; `Orders.csv` vs `Orders_*.csv`; the available-branch side
+effect; tag-vs-live-scope case/hyphen mismatch.
 
 ## Analysis notes
 
