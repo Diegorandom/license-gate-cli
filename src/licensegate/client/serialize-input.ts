@@ -11,7 +11,14 @@ export function serializeLicenseInput(input: LicenseGateLicenseCreateInput | Lic
 
 export function serializeLicenseUpdateInput(input: LicenseGateLicenseUpdateInput) {
   const serialized = serializeLicenseInput(input)
-  return removeNullishDeep(serialized) as LicenseGateLicenseUpdateInput
+  // `expirationDate: null` es un valor, no un hueco: significa «esta licencia no
+  // caduca» y la API lo acepta (licenseCreateSchema: z.date().nullish()). Si se
+  // filtra aquí, la petición sale sin el campo y el PATCH se interpreta como
+  // «no toques este campo» — que es exactamente lo contrario de lo pedido.
+  const clearsExpiration = input.expirationDate === null
+  const cleaned = removeNullishDeep(serialized) as LicenseGateLicenseUpdateInput
+  if (clearsExpiration) (cleaned as { expirationDate?: null }).expirationDate = null
+  return cleaned
 }
 
 function removeNullishDeep(value: unknown): unknown {

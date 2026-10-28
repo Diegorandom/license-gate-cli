@@ -7,3 +7,6 @@ examples/*
 !examples/template.*.json
 licenseKeyFiles/*
 .DS_Store
+
+# Datos de la tienda: códigos de descuento y contenido de correo
+licensing/catalog.json

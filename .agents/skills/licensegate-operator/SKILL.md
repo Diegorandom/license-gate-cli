@@ -135,7 +135,17 @@ Legacy array format (one object per license) also works. `replenishInterval` ∈
 - **`data` fields bulk-update applies:** `active`, `licenseKey`, `name`, `notes`,
   `expirationDate`. Other fields are stripped by the bulk normalizer and have no effect.
 - **`expirationDate` semantics:** `{ "extendByDays": N }` → `now + N days` (ISO), i.e.
-  **from now**, not from current expiration. `null` clears it; a string sets it exactly.
+  **from now**, not from current expiration. A string sets it exactly.
+- ⚠️ **`null` does NOT clear the date via this API** (measured 2026-10-28, HTTP 422
+  `invalid ISO 8601 datetime format`). The REST schema requires an ISO string on both
+  create and update, so **a truly expiring-free license cannot be created or patched
+  through the API** — the ones that exist (dashboard-made) are also **unpatchable**,
+  because their `ipLimit`/`validationPoints`/`validationLimit` are null and the schema
+  demands numbers. Practical convention for "perpetual": a far-future ISO date, e.g.
+  `2099-12-31T23:59:59.000Z`.
+- **`bulk-update --yes [--max N]`** runs non-interactively (no TTY needed) and aborts
+  if the resolved plan exceeds N (default 50). Use it for scripted batches; the
+  interactive path stays the default.
 
 ### bulk-update-key-files — non-interactive, CSV-driven
 
@@ -174,6 +184,9 @@ Hard-coded `days = 8`:
 - Treat the `-keys.txt` file as a live secret (hand it to the customer; don't commit).
 - `bulk-update` prints `{ total, attempted, successCount, failureCount, skippedCount,
   terminatedEarly, failures, report }`.
+- `reactivate` prints `{ id, scope, key, from, baseForExtension, to, days, applied }` and
+  is **dry-run unless `--yes`**. It reads the license by key (`/admin/licenses/key/{key}`)
+  and extends from `max(now, current expiry) + days`.
 - `bulk-update-key-files` prints `{ command, plannedCount, updatedCount, failedCount, report }`.
 - `single-update` prints `{ command, result }`.
 - Dry-runs print `targetCount` (bulk-update), `plannedCount` + `planned[]` (key-files),

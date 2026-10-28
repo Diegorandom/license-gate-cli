@@ -40,7 +40,12 @@ export class LicenseGateAdminClient {
     try {
       return await requestJson<LicenseGateLicense>(this.fetchImplementation, this.baseUrl, this.apiKey, `/admin/licenses/${id}`, {
         method: 'PATCH',
-        body: JSON.stringify(payload, (_key, value) => (value === null ? undefined : value)),
+        // El resto de `null` se descarta (la API los rechaza en campos no
+        // nulables), pero `expirationDate: null` es una instrucción válida:
+        // «quita la fecha». Filtrarlo convertiría un borrado en un no-op.
+        body: JSON.stringify(payload, (key, value) =>
+          value === null && key !== 'expirationDate' ? undefined : value
+        ),
       })
     } catch (error) {
       if (!(error instanceof LicenseGateAdminClientError)) throw error
@@ -54,6 +59,16 @@ export class LicenseGateAdminClient {
 
   async listLicenses() {
     return listAllLicenses(this.fetchImplementation, this.baseUrl, this.apiKey)
+  }
+
+  /** Lee una licencia por su clave. El endpoint existe en la API: /admin/licenses/key/{key}. */
+  async getLicenseByKey(licenseKey: string) {
+    return requestJson<LicenseGateLicense>(
+      this.fetchImplementation,
+      this.baseUrl,
+      this.apiKey,
+      `/admin/licenses/key/${encodeURIComponent(licenseKey.trim())}`
+    )
   }
 
   async bulkCreate(
