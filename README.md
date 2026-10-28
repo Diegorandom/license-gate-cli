@@ -64,6 +64,10 @@ Pass values as flags or environment variables:
 
 - `npx ts-node src/cli.ts bulk-update --api-key YOUR_API_KEY --input ./examples/template.bulk-update.json --report ./reports/update-report.json`
 
+`bulk-update --yes [--max N]` runs the same job non-interactively (for scripted batches):
+it resolves the targets first and **aborts if they exceed `--max`** (default 50). The
+interactive path below stays the default.
+
 `bulk-update` is interactive:
 - `y` / `yes`: update this license
 - `n` / `no`: skip this license
@@ -101,6 +105,14 @@ Expected CSV headers:
 
   Example header:
   - `order_number,order_name,customer,email,products,date`
+
+### Reactivate one license (by key)
+
+- `npx ts-node src/cli.ts reactivate --key LICENSE_KEY [--days 30] [--yes] [--report f.json]`
+
+Extends a customer's license **from its current expiry** when that expiry is still in
+the future, or from now when it has already lapsed — so renewing early never costs the
+remaining days. **Dry-run by default**: without `--yes` it only prints the before/after.
 
 ### Single update for testing
 
